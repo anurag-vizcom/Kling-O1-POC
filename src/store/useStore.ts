@@ -28,6 +28,7 @@ export interface AINodeData {
   isGenerating: boolean
   outputUrl?: string
   model: string
+  keepAudio?: boolean
 }
 
 export interface SectionData {
@@ -46,11 +47,14 @@ interface EditorState {
   onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
   addMediaNode: (media: MediaData, position: { x: number; y: number }) => void
-  addAINode: (position: { x: number; y: number }) => void
+  addGenerateVideoNode: (position: { x: number; y: number }) => void
+  addEditVideoNode: (position: { x: number; y: number }) => void
   addSectionNode: (position: { x: number; y: number }) => void
   updateNodeData: (nodeId: string, data: Partial<CustomNodeData>) => void
   deleteNode: (nodeId: string) => void
   getConnectedMediaNodes: (nodeId: string) => Node[]
+  getConnectedImageNodes: (nodeId: string) => Node[]
+  getConnectedVideoNodes: (nodeId: string) => Node[]
 }
 
 const useStore = create<EditorState>((set, get) => ({
@@ -95,17 +99,34 @@ const useStore = create<EditorState>((set, get) => ({
     set({ nodes: [...get().nodes, newNode] })
   },
   
-  addAINode: (position) => {
+  addGenerateVideoNode: (position) => {
     const newNode: Node = {
       id: uuid(),
-      type: 'ai',
+      type: 'generateVideo',
       position,
       data: {
-        label: 'AI Video Generator',
+        label: 'Generate Video',
         inputs: [],
         prompt: '',
         isGenerating: false,
         model: 'fal-ai/kling-video/v1.5/pro/image-to-video',
+      } as AINodeData,
+    }
+    set({ nodes: [...get().nodes, newNode] })
+  },
+  
+  addEditVideoNode: (position) => {
+    const newNode: Node = {
+      id: uuid(),
+      type: 'editVideo',
+      position,
+      data: {
+        label: 'Edit Video',
+        inputs: [],
+        prompt: '',
+        isGenerating: false,
+        model: 'fal-ai/kling-video/o1/video-to-video/edit',
+        keepAudio: true,
       } as AINodeData,
     }
     set({ nodes: [...get().nodes, newNode] })
@@ -155,7 +176,30 @@ const useStore = create<EditorState>((set, get) => ({
       (node) => connectedNodeIds.includes(node.id) && node.type === 'media'
     )
   },
+  
+  getConnectedImageNodes: (nodeId) => {
+    const { nodes, edges } = get()
+    const connectedEdges = edges.filter((edge) => edge.target === nodeId)
+    const connectedNodeIds = connectedEdges.map((edge) => edge.source)
+    return nodes.filter(
+      (node) => 
+        connectedNodeIds.includes(node.id) && 
+        node.type === 'media' && 
+        (node.data as MediaData).type === 'image'
+    )
+  },
+  
+  getConnectedVideoNodes: (nodeId) => {
+    const { nodes, edges } = get()
+    const connectedEdges = edges.filter((edge) => edge.target === nodeId)
+    const connectedNodeIds = connectedEdges.map((edge) => edge.source)
+    return nodes.filter(
+      (node) => 
+        connectedNodeIds.includes(node.id) && 
+        node.type === 'media' && 
+        (node.data as MediaData).type === 'video'
+    )
+  },
 }))
 
 export default useStore
-

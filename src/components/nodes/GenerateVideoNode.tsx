@@ -6,23 +6,15 @@ import {
   Sparkles, 
   Play, 
   Loader2, 
-  ChevronDown,
   Image as ImageIcon,
   Download
 } from 'lucide-react'
 import useStore, { AINodeData, MediaData } from '../../store/useStore'
 import { fal } from '../../lib/fal'
 
-const AI_MODELS = [
-  { id: 'fal-ai/kling-video/v1.5/pro/image-to-video', name: 'Kling 1.5 Pro', description: 'High quality video generation' },
-  { id: 'fal-ai/kling-video/v1/standard/image-to-video', name: 'Kling 1.0 Standard', description: 'Fast video generation' },
-  { id: 'fal-ai/minimax-video/image-to-video', name: 'MiniMax', description: 'Alternative model' },
-]
-
-function AINode({ id, data, selected }: NodeProps) {
+function GenerateVideoNode({ id, data, selected }: NodeProps) {
   const aiData = data as AINodeData
   const { deleteNode, updateNodeData, getConnectedMediaNodes } = useStore()
-  const [modelMenuOpen, setModelMenuOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const connectedMedia = getConnectedMediaNodes(id)
@@ -91,8 +83,6 @@ function AINode({ id, data, selected }: NodeProps) {
     }
   }
 
-  const selectedModel = AI_MODELS.find(m => m.id === aiData.model) || AI_MODELS[0]
-
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -156,44 +146,6 @@ function AINode({ id, data, selected }: NodeProps) {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Model Selector */}
-        <div className="relative">
-          <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5 block">
-            Model
-          </label>
-          <button
-            onClick={() => setModelMenuOpen(!modelMenuOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 bg-black/30 border border-node-border rounded-lg text-sm text-white/80 hover:border-white/20 transition-colors"
-          >
-            <span>{selectedModel.name}</span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${modelMenuOpen ? 'rotate-180' : ''}`} />
-          </button>
-          
-          {modelMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute top-full left-0 right-0 mt-1 bg-node-bg border border-node-border rounded-lg overflow-hidden z-10 shadow-xl"
-            >
-              {AI_MODELS.map((model) => (
-                <button
-                  key={model.id}
-                  onClick={() => {
-                    updateNodeData(id, { model: model.id })
-                    setModelMenuOpen(false)
-                  }}
-                  className={`w-full text-left px-3 py-2 hover:bg-white/5 transition-colors ${
-                    model.id === aiData.model ? 'bg-accent-secondary/10' : ''
-                  }`}
-                >
-                  <p className="text-sm text-white/90">{model.name}</p>
-                  <p className="text-[10px] text-white/40">{model.description}</p>
-                </button>
-              ))}
-            </motion.div>
-          )}
         </div>
 
         {/* Prompt Input */}
@@ -285,5 +237,5 @@ async function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
-export default memo(AINode)
+export default memo(GenerateVideoNode)
 

@@ -9,12 +9,14 @@ import {
 } from '@xyflow/react'
 import useStore from '../store/useStore'
 import MediaNode from './nodes/MediaNode'
-import AINode from './nodes/AINode'
+import GenerateVideoNode from './nodes/GenerateVideoNode'
+import EditVideoNode from './nodes/EditVideoNode'
 import SectionNode from './nodes/SectionNode'
 
 const nodeTypes: NodeTypes = {
   media: MediaNode,
-  ai: AINode,
+  generateVideo: GenerateVideoNode,
+  editVideo: EditVideoNode,
   section: SectionNode,
 }
 
@@ -133,8 +135,10 @@ export default function Canvas() {
             switch (node.type) {
               case 'media':
                 return '#00d4aa'
-              case 'ai':
+              case 'generateVideo':
                 return '#7c3aed'
+              case 'editVideo':
+                return '#00d4aa'
               case 'section':
                 return '#3a3a40'
               default:
@@ -147,4 +151,3 @@ export default function Canvas() {
     </div>
   )
 }
-

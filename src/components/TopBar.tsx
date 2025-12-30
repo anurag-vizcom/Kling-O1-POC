@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Video, Layers, X, Image, Film } from 'lucide-react'
+import { Plus, Video, Layers, X, Image, Film, Wand2 } from 'lucide-react'
 import useStore from '../store/useStore'
 import { useReactFlow } from '@xyflow/react'
 
 export default function TopBar() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { addAINode, addSectionNode, addMediaNode } = useStore()
+  const { addGenerateVideoNode, addEditVideoNode, addSectionNode, addMediaNode } = useStore()
   const { getViewport } = useReactFlow()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -18,9 +18,15 @@ export default function TopBar() {
     }
   }
 
-  const handleAddAINode = () => {
+  const handleAddGenerateVideoNode = () => {
     const center = getCanvasCenter()
-    addAINode({ x: center.x - 150, y: center.y - 100 })
+    addGenerateVideoNode({ x: center.x - 150, y: center.y - 100 })
+    setMenuOpen(false)
+  }
+
+  const handleAddEditVideoNode = () => {
+    const center = getCanvasCenter()
+    addEditVideoNode({ x: center.x - 150, y: center.y - 100 })
     setMenuOpen(false)
   }
 
@@ -143,16 +149,30 @@ export default function TopBar() {
             >
               <div className="p-2">
                 <p className="px-3 py-2 text-xs text-white/40 uppercase tracking-wider">
-                  Add to Canvas
+                  AI Nodes
                 </p>
 
                 <MenuItem
                   icon={<Video className="w-4 h-4" />}
-                  label="AI Video Generator"
-                  description="Generate videos with AI"
+                  label="Generate Video"
+                  description="Generate videos from images"
                   color="accent-secondary"
-                  onClick={handleAddAINode}
+                  onClick={handleAddGenerateVideoNode}
                 />
+
+                <MenuItem
+                  icon={<Wand2 className="w-4 h-4" />}
+                  label="Edit Video"
+                  description="Edit and transform videos"
+                  color="accent-primary"
+                  onClick={handleAddEditVideoNode}
+                />
+
+                <div className="h-px bg-node-border my-2" />
+
+                <p className="px-3 py-2 text-xs text-white/40 uppercase tracking-wider">
+                  Organization
+                </p>
 
                 <MenuItem
                   icon={<Layers className="w-4 h-4" />}
@@ -249,4 +269,3 @@ function MenuItem({ icon, label, description, color, onClick }: MenuItemProps) {
     </motion.button>
   )
 }
-
