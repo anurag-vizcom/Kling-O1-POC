@@ -11,12 +11,14 @@ import useStore from '../store/useStore'
 import MediaNode from './nodes/MediaNode'
 import GenerateVideoNode from './nodes/GenerateVideoNode'
 import EditVideoNode from './nodes/EditVideoNode'
+import ExtendVideoNode from './nodes/ExtendVideoNode'
 import SectionNode from './nodes/SectionNode'
 
 const nodeTypes: NodeTypes = {
   media: MediaNode,
   generateVideo: GenerateVideoNode,
   editVideo: EditVideoNode,
+  extendVideo: ExtendVideoNode,
   section: SectionNode,
 }
 
@@ -139,6 +141,8 @@ export default function Canvas() {
                 return '#7c3aed'
               case 'editVideo':
                 return '#00d4aa'
+              case 'extendVideo':
+                return '#f59e0b'
               case 'section':
                 return '#3a3a40'
               default:

@@ -7,21 +7,30 @@ import {
   Play, 
   Loader2, 
   Image as ImageIcon,
-  Download
+  Download,
+  Clock,
+  ArrowRight
 } from 'lucide-react'
 import useStore, { AINodeData, MediaData } from '../../store/useStore'
 import { fal } from '../../lib/fal'
 
+const DURATION_OPTIONS = [
+  { value: '5', label: '5 seconds' },
+  { value: '10', label: '10 seconds' },
+] as const
+
 function GenerateVideoNode({ id, data, selected }: NodeProps) {
   const aiData = data as AINodeData
-  const { deleteNode, updateNodeData, getConnectedMediaNodes } = useStore()
+  const { deleteNode, updateNodeData, getConnectedImageNodes } = useStore()
   const [error, setError] = useState<string | null>(null)
 
-  const connectedMedia = getConnectedMediaNodes(id)
+  const connectedImages = getConnectedImageNodes(id)
+  const startFrame = connectedImages[0]
+  const endFrame = connectedImages[1]
   
   const handleGenerate = async () => {
-    if (connectedMedia.length === 0) {
-      setError('Connect at least one image')
+    if (!startFrame) {
+      setError('Connect a start frame image')
       return
     }
 
@@ -34,24 +43,36 @@ function GenerateVideoNode({ id, data, selected }: NodeProps) {
     updateNodeData(id, { isGenerating: true })
 
     try {
-      // Get the first connected image URL
-      const firstMedia = connectedMedia[0].data as MediaData
-      
-      // Convert blob URL to base64 if needed
-      let imageUrl = firstMedia.url
-      if (imageUrl.startsWith('blob:')) {
-        const response = await fetch(imageUrl)
+      // Get start frame URL
+      const startMedia = startFrame.data as MediaData
+      let startImageUrl = startMedia.url
+      if (startImageUrl.startsWith('blob:')) {
+        const response = await fetch(startImageUrl)
         const blob = await response.blob()
-        imageUrl = await blobToBase64(blob)
+        startImageUrl = await blobToBase64(blob)
+      }
+
+      // Build input object
+      const input: Record<string, unknown> = {
+        prompt: aiData.prompt,
+        start_image_url: startImageUrl,
+        duration: aiData.duration ?? '5',
+      }
+
+      // Add end frame if available
+      if (endFrame) {
+        const endMedia = endFrame.data as MediaData
+        let endImageUrl = endMedia.url
+        if (endImageUrl.startsWith('blob:')) {
+          const response = await fetch(endImageUrl)
+          const blob = await response.blob()
+          endImageUrl = await blobToBase64(blob)
+        }
+        input.end_image_url = endImageUrl
       }
 
       const result = await fal.subscribe(aiData.model, {
-        input: {
-          prompt: aiData.prompt,
-          image_url: imageUrl,
-          duration: '5',
-          aspect_ratio: '16:9',
-        },
+        input,
         logs: true,
         onQueueUpdate: (update) => {
           if (update.status === 'IN_PROGRESS') {
@@ -117,35 +138,64 @@ function GenerateVideoNode({ id, data, selected }: NodeProps) {
       />
 
       <div className="p-3 space-y-3">
-        {/* Connected Inputs */}
+        {/* Frame Inputs */}
         <div>
           <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5 block">
-            Image Inputs ({connectedMedia.length})
+            Frames (Start → End)
           </label>
-          <div className="flex flex-wrap gap-1.5">
-            {connectedMedia.length > 0 ? (
-              connectedMedia.map((node) => {
-                const media = node.data as MediaData
-                return (
-                  <div
-                    key={node.id}
-                    className="w-10 h-10 rounded border border-node-border overflow-hidden"
-                  >
-                    <img
-                      src={media.url}
-                      alt={media.name}
-                      className="w-full h-full object-cover"
-                    />
+          
+          <div className="flex items-center gap-2">
+            {/* Start Frame */}
+            <div className="flex-1">
+              <div className="text-[9px] text-white/30 mb-1">Start Frame</div>
+              {startFrame ? (
+                <div className="relative aspect-video rounded border border-accent-secondary/30 overflow-hidden">
+                  <img
+                    src={(startFrame.data as MediaData).url}
+                    alt="Start frame"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-0.5 left-0.5 px-1 py-0.5 bg-black/60 rounded text-[8px] text-accent-secondary">
+                    @Image1
                   </div>
-                )
-              })
-            ) : (
-              <div className="flex items-center gap-2 text-xs text-white/30 py-2">
-                <ImageIcon className="w-4 h-4" />
-                <span>Connect images to this node</span>
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="aspect-video rounded border border-dashed border-node-border flex items-center justify-center">
+                  <ImageIcon className="w-4 h-4 text-white/20" />
+                </div>
+              )}
+            </div>
+
+            <ArrowRight className="w-4 h-4 text-white/20 flex-shrink-0" />
+
+            {/* End Frame */}
+            <div className="flex-1">
+              <div className="text-[9px] text-white/30 mb-1">End Frame (optional)</div>
+              {endFrame ? (
+                <div className="relative aspect-video rounded border border-accent-secondary/30 overflow-hidden">
+                  <img
+                    src={(endFrame.data as MediaData).url}
+                    alt="End frame"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-0.5 left-0.5 px-1 py-0.5 bg-black/60 rounded text-[8px] text-accent-secondary">
+                    @Image2
+                  </div>
+                </div>
+              ) : (
+                <div className="aspect-video rounded border border-dashed border-node-border flex items-center justify-center">
+                  <span className="text-[9px] text-white/20">Optional</span>
+                </div>
+              )}
+            </div>
           </div>
+          
+          {!startFrame && (
+            <div className="flex items-center gap-2 text-xs text-white/30 mt-2">
+              <ImageIcon className="w-4 h-4" />
+              <span>Connect 1-2 images for start/end frames</span>
+            </div>
+          )}
         </div>
 
         {/* Prompt Input */}
@@ -156,9 +206,35 @@ function GenerateVideoNode({ id, data, selected }: NodeProps) {
           <textarea
             value={aiData.prompt}
             onChange={(e) => updateNodeData(id, { prompt: e.target.value })}
-            placeholder="Describe the video you want to generate..."
+            placeholder="Describe the transition between frames..."
             className="w-full h-20 px-3 py-2 bg-black/30 border border-node-border rounded-lg text-sm text-white/90 placeholder:text-white/30 resize-none focus:outline-none focus:border-accent-secondary/50 transition-colors"
           />
+          <p className="text-[10px] text-white/30 mt-1">
+            Use @Image1 (start) and @Image2 (end) in prompt
+          </p>
+        </div>
+
+        {/* Duration */}
+        <div>
+          <label className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5 flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            Duration
+          </label>
+          <div className="flex gap-1">
+            {DURATION_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => updateNodeData(id, { duration: option.value })}
+                className={`flex-1 px-2 py-1.5 text-[10px] font-medium rounded transition-colors ${
+                  (aiData.duration ?? '5') === option.value
+                    ? 'bg-accent-secondary/20 text-accent-secondary border border-accent-secondary/30'
+                    : 'bg-black/20 text-white/50 border border-node-border hover:border-white/20'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Error Message */}
@@ -238,4 +314,3 @@ async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 export default memo(GenerateVideoNode)
-

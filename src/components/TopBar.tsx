@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Video, Layers, X, Image, Film, Wand2 } from 'lucide-react'
+import { Plus, Video, Layers, X, Image, Film, Wand2, FastForward } from 'lucide-react'
 import useStore from '../store/useStore'
 import { useReactFlow } from '@xyflow/react'
 
 export default function TopBar() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { addGenerateVideoNode, addEditVideoNode, addSectionNode, addMediaNode } = useStore()
+  const { addGenerateVideoNode, addEditVideoNode, addExtendVideoNode, addSectionNode, addMediaNode } = useStore()
   const { getViewport } = useReactFlow()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -27,6 +27,12 @@ export default function TopBar() {
   const handleAddEditVideoNode = () => {
     const center = getCanvasCenter()
     addEditVideoNode({ x: center.x - 150, y: center.y - 100 })
+    setMenuOpen(false)
+  }
+
+  const handleAddExtendVideoNode = () => {
+    const center = getCanvasCenter()
+    addExtendVideoNode({ x: center.x - 150, y: center.y - 100 })
     setMenuOpen(false)
   }
 
@@ -166,6 +172,14 @@ export default function TopBar() {
                   description="Edit and transform videos"
                   color="accent-primary"
                   onClick={handleAddEditVideoNode}
+                />
+
+                <MenuItem
+                  icon={<FastForward className="w-4 h-4" />}
+                  label="Extend Video"
+                  description="Generate next shot from video"
+                  color="accent-warning"
+                  onClick={handleAddExtendVideoNode}
                 />
 
                 <div className="h-px bg-node-border my-2" />

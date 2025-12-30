@@ -29,6 +29,8 @@ export interface AINodeData {
   outputUrl?: string
   model: string
   keepAudio?: boolean
+  duration?: '5' | '10'
+  aspectRatio?: 'auto' | '16:9' | '9:16' | '1:1'
 }
 
 export interface SectionData {
@@ -49,6 +51,7 @@ interface EditorState {
   addMediaNode: (media: MediaData, position: { x: number; y: number }) => void
   addGenerateVideoNode: (position: { x: number; y: number }) => void
   addEditVideoNode: (position: { x: number; y: number }) => void
+  addExtendVideoNode: (position: { x: number; y: number }) => void
   addSectionNode: (position: { x: number; y: number }) => void
   updateNodeData: (nodeId: string, data: Partial<CustomNodeData>) => void
   deleteNode: (nodeId: string) => void
@@ -109,7 +112,8 @@ const useStore = create<EditorState>((set, get) => ({
         inputs: [],
         prompt: '',
         isGenerating: false,
-        model: 'fal-ai/kling-video/v1.5/pro/image-to-video',
+        model: 'fal-ai/kling-video/o1/image-to-video',
+        duration: '5',
       } as AINodeData,
     }
     set({ nodes: [...get().nodes, newNode] })
@@ -127,6 +131,25 @@ const useStore = create<EditorState>((set, get) => ({
         isGenerating: false,
         model: 'fal-ai/kling-video/o1/video-to-video/edit',
         keepAudio: true,
+      } as AINodeData,
+    }
+    set({ nodes: [...get().nodes, newNode] })
+  },
+  
+  addExtendVideoNode: (position) => {
+    const newNode: Node = {
+      id: uuid(),
+      type: 'extendVideo',
+      position,
+      data: {
+        label: 'Extend Video',
+        inputs: [],
+        prompt: '',
+        isGenerating: false,
+        model: 'fal-ai/kling-video/o1/video-to-video/reference',
+        keepAudio: true,
+        duration: '5',
+        aspectRatio: 'auto',
       } as AINodeData,
     }
     set({ nodes: [...get().nodes, newNode] })
